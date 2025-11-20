@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# Database files (keep structure but not data)
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated files
+invoices/*.pdf
+uploads/*
+!uploads/.gitkeep
+!invoices/.gitkeep
+
+# Backup files
+*.backup_*
+*.bak
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# CSV/Excel files with sensitive data
+db.csv
+*.xlsx

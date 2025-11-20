@@ -1,0 +1,250 @@
+/* Custom CSS for Invoice Generation System */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --dark-color: #212529;
+    --light-color: #f8f9fa;
+}
+
+/* Global Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #6610f2 100%);
+    border: none !important;
+}
+
+/* Card Enhancements */
+.card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Navigation */
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+    border-radius: 0.375rem;
+    margin: 0 0.25rem;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+/* Form Enhancements */
+.form-control, .form-select {
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button Enhancements */
+.btn {
+    transition: all 0.3s ease;
+    border-radius: 0.375rem;
+    font-weight: 500;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Table Enhancements */
+.table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.table th {
+    background-color: var(--light-color);
+    border-bottom: 2px solid var(--primary-color);
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.table tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Badge Enhancements */
+.badge {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* Alert Enhancements */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Sticky Elements */
+.sticky-top {
+    position: sticky;
+    top: 2rem;
+    z-index: 1020;
+}
+
+/* Loading States */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1055;
+}
+
+.toast {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .display-1 {
+        font-size: 3rem;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .display-6 {
+        font-size: 1.5rem;
+    }
+    
+    .hero-section {
+        padding: 2rem !important;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .btn,
+    .card-header,
+    footer {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+        box-shadow: none !important;
+    }
+    
+    body {
+        background-color: white !important;
+    }
+}
+
+/* Custom Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Status Colors */
+.status-in-stock {
+    background-color: var(--success-color) !important;
+}
+
+.status-low-stock {
+    background-color: var(--warning-color) !important;
+    color: var(--dark-color) !important;
+}
+
+.status-out-of-stock {
+    background-color: var(--danger-color) !important;
+}
+
+/* Form Validation */
+.was-validated .form-control:invalid {
+    border-color: var(--danger-color);
+}
+
+.was-validated .form-control:valid {
+    border-color: var(--success-color);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    border-radius: 0 0 0.5rem 0.5rem;
+}

@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Invoice Generation System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-6 fw-bold">
+                <i class="bi bi-graph-up me-3"></i>
+                Reports & Analytics
+            </h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active" onclick="loadReports('daily')" id="dailyBtn">Daily</button>
+                <button type="button" class="btn btn-outline-primary" onclick="loadReports('weekly')" id="weeklyBtn">Weekly</button>
+                <button type="button" class="btn btn-outline-primary" onclick="loadReports('monthly')" id="monthlyBtn">Monthly</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <div class="display-6 text-primary mb-3">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <h5 class="card-title">Total Invoices</h5>
+                <p class="card-text display-6 fw-bold text-primary" id="totalInvoices">0</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <div class="display-6 text-success mb-3">
+                    <i class="bi bi-currency-rupee"></i>
+                </div>
+                <h5 class="card-title">Total Revenue</h5>
+                <p class="card-text display-6 fw-bold text-success" id="totalRevenue">₹0</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <div class="display-6 text-success mb-3">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h5 class="card-title">Total Profits</h5>
+                <p class="card-text display-6 fw-bold text-success" id="totalProfits">₹0</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <div class="display-6 text-info mb-3">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <h5 class="card-title">Products Sold</h5>
+                <p class="card-text display-6 fw-bold text-info" id="productsSold">0</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Row of Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <div class="display-6 text-warning mb-3">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h5 class="card-title">Customers</h5>
+                <p class="card-text display-6 fw-bold text-warning" id="totalCustomers">0</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <div class="display-6 text-danger mb-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <h5 class="card-title">Damaged Products</h5>
+                <p class="card-text display-6 fw-bold text-danger" id="totalDamaged">0</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <div class="display-6 text-danger mb-3">
+                    <i class="bi bi-currency-rupee"></i>
+                </div>
+                <h5 class="card-title">Damaged Value</h5>
+                <p class="card-text display-6 fw-bold text-danger" id="damagedValue">₹0</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reports Tabs -->
+<div class="row">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="reportsTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales-pane" type="button" role="tab">
+                    <i class="bi bi-bar-chart me-2"></i>Products Sold
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="profit-tab" data-bs-toggle="tab" data-bs-target="#profit-pane" type="button" role="tab">
+                    <i class="bi bi-currency-dollar me-2"></i>Profit Analysis
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="top-products-tab" data-bs-toggle="tab" data-bs-target="#top-products-pane" type="button" role="tab">
+                    <i class="bi bi-trophy me-2"></i>Best Sellers
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="damaged-tab" data-bs-toggle="tab" data-bs-target="#damaged-pane" type="button" role="tab">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Damaged Products
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="reportsTabContent">
+            <!-- Sales Report Tab -->
+            <div class="tab-pane fade show active" id="sales-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bar-chart me-2"></i>
+                            Products Sold Report
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product Name (Weight)</th>
+                                        <th>Quantity Sold</th>
+                                        <th>Total Revenue</th>
+                                        <th>Times Sold</th>
+                                        <th>Avg Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salesReportTable">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profit Report Tab -->
+            <div class="tab-pane fade" id="profit-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-currency-dollar me-2"></i>
+                            Profit Analysis Report
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product Name (Weight)</th>
+                                        <th>Sold</th>
+                                        <th>Revenue</th>
+                                        <th>Cost</th>
+                                        <th>Profit</th>
+                                        <th>Margin %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="profitReportTable">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Products Tab -->
+            <div class="tab-pane fade" id="top-products-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-trophy me-2"></i>
+                            Most Sold Products
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Product Name (Weight)</th>
+                                        <th>Total Sold</th>
+                                        <th>Revenue</th>
+                                        <th>Orders</th>
+                                        <th>Avg Qty/Order</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topProductsTable">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="spinner-border text-warning" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Damaged Products Tab -->
+            <div class="tab-pane fade" id="damaged-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Damaged Products Report
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            This report shows all products currently marked as damaged, representing stock that cannot be sold.
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th>Weight/Size</th>
+                                        <th>Available Stock</th>
+                                        <th>Damaged Quantity</th>
+                                        <th>Cost Price (₹)</th>
+                                        <th>Value Lost (₹)</th>
+                                        <th>Last Updated</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="damagedProductsTable">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4">
+                                            <div class="spinner-border text-danger" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentPeriod = 'daily';
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadReports('daily');
+});
+
+// Load reports for specified period
+async function loadReports(period) {
+    currentPeriod = period;
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(period + 'Btn').classList.add('active');
+    
+    // Load all reports
+    await loadSummaryStats(period);
+    await loadSalesReport(period);
+    await loadProfitReport(period);
+    await loadTopProducts(period);
+    await loadDamagedReport();
+}
+
+// Load summary statistics
+async function loadSummaryStats(period) {
+    try {
+        const response = await fetch(`/api/reports/summary/${period}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('totalInvoices').textContent = data.data.total_invoices;
+            document.getElementById('totalRevenue').textContent = `₹${data.data.total_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalProfits').textContent = `₹${data.data.total_profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('productsSold').textContent = data.data.total_products_sold;
+            document.getElementById('totalCustomers').textContent = data.data.unique_customers;
+            document.getElementById('totalDamaged').textContent = data.data.total_damaged_products || 0;
+            document.getElementById('damagedValue').textContent = `₹${(data.data.damaged_value || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+    } catch (error) {
+        console.error('Error loading summary stats:', error);
+    }
+}
+
+// Load sales report
+async function loadSalesReport(period) {
+    try {
+        const response = await fetch(`/api/reports/sales/${period}`);
+        const data = await response.json();
+        
+        const tbody = document.getElementById('salesReportTable');
+        
+        if (data.success && data.data.length > 0) {
+            tbody.innerHTML = data.data.map(item => `
+                <tr>
+                    <td class="fw-semibold">${item.product_name}</td>
+                    <td><span class="badge bg-info">${item.total_quantity}</span></td>
+                    <td>₹${item.total_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td>${item.times_sold}</td>
+                    <td>₹${item.avg_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                        No sales data found for ${period} period
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading sales report:', error);
+        document.getElementById('salesReportTable').innerHTML = `
+            <tr><td colspan="5" class="text-center text-danger">Error loading data</td></tr>
+        `;
+    }
+}
+
+// Load profit report
+async function loadProfitReport(period) {
+    try {
+        const response = await fetch(`/api/reports/profit/${period}`);
+        const data = await response.json();
+        
+        const tbody = document.getElementById('profitReportTable');
+        
+        if (data.success && data.data.length > 0) {
+            tbody.innerHTML = data.data.map(item => `
+                <tr>
+                    <td class="fw-semibold">${item.product_name}</td>
+                    <td><span class="badge bg-info">${item.total_sold}</span></td>
+                    <td>₹${item.total_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td>₹${item.total_cost.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="${item.profit >= 0 ? 'text-success' : 'text-danger'} fw-bold">₹${item.profit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="${item.profit_margin >= 0 ? 'text-success' : 'text-danger'} fw-bold">${item.profit_margin.toFixed(1)}%</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                        No profit data found for ${period} period
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading profit report:', error);
+        document.getElementById('profitReportTable').innerHTML = `
+            <tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>
+        `;
+    }
+}
+
+// Load top products
+async function loadTopProducts(period) {
+    try {
+        const response = await fetch(`/api/reports/top-products/${period}`);
+        const data = await response.json();
+        
+        const tbody = document.getElementById('topProductsTable');
+        
+        if (data.success && data.data.length > 0) {
+            tbody.innerHTML = data.data.map((item, index) => `
+                <tr>
+                    <td>
+                        <span class="badge ${index === 0 ? 'bg-warning text-dark' : index === 1 ? 'bg-secondary' : index === 2 ? 'bg-dark' : 'bg-light text-dark'}">${index + 1}</span>
+                    </td>
+                    <td class="fw-semibold">${item.product_name}</td>
+                    <td><span class="badge bg-success">${item.total_sold}</span></td>
+                    <td>₹${item.total_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td>${item.times_ordered}</td>
+                    <td>${item.avg_quantity_per_order.toFixed(1)}</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                        No products sold in ${period} period
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading top products:', error);
+        document.getElementById('topProductsTable').innerHTML = `
+            <tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>
+        `;
+    }
+}
+
+// Utility function for showing notifications
+function showToast(message, type = 'info') {
+    // Simple alert for now - can be enhanced with proper toast notifications
+    alert(message);
+}
+
+// Load damaged products report
+async function loadDamagedReport() {
+    try {
+        const response = await fetch('/api/products/damaged-report');
+        const data = await response.json();
+        
+        const tbody = document.getElementById('damagedProductsTable');
+        
+        if (data.success && data.data.length > 0) {
+            tbody.innerHTML = data.data.map(item => `
+                <tr>
+                    <td class="fw-semibold">${item.product_name}</td>
+                    <td class="text-muted">${item.weight || 'N/A'}</td>
+                    <td><span class="badge bg-success">${item.available_quantity}</span></td>
+                    <td><span class="badge bg-danger">${item.damaged_quantity}</span></td>
+                    <td>₹${item.cost_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="text-danger fw-bold">₹${item.total_value_lost.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="text-muted">${new Date(item.updated_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-success" onclick="restoreDamagedFromReport('${item.full_product_name}', ${item.damaged_quantity})" title="Restore Damaged Products">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="bi bi-check-circle display-6 d-block mb-2 text-success"></i>
+                        No damaged products found - Great news!
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading damaged products report:', error);
+        document.getElementById('damagedProductsTable').innerHTML = `
+            <tr><td colspan="8" class="text-center text-danger">Error loading damaged products data</td></tr>
+        `;
+    }
+}
+
+// Restore damaged products from report
+async function restoreDamagedFromReport(productName, maxQuantity) {
+    const restoreQty = prompt(`Restore damaged products for "${productName}":\nDamaged stock: ${maxQuantity}`, 1);
+    
+    if (restoreQty === null) return; // User cancelled
+    
+    const quantity = parseInt(restoreQty);
+    if (isNaN(quantity) || quantity <= 0 || quantity > maxQuantity) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/products/restore', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                full_product_name: productName, 
+                restore_quantity: quantity 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Reload reports to update all data
+            loadReports(currentPeriod);
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error restoring products: ' + error.message, 'error');
+    }
+}
+</script>
+{% endblock %}

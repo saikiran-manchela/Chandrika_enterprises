@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Invoice - Invoice Generation System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-6 fw-bold">
+                <i class="bi bi-file-earmark-plus me-3"></i>
+                Generate Invoice
+            </h1>
+            <button class="btn btn-outline-secondary" onclick="clearInvoiceForm()">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                Clear Form
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Customer Information -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person me-2"></i>
+                    Customer Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="customerForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="customerName" class="form-label">Customer Name *</label>
+                            <input type="text" class="form-control" id="customerName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="customerPhone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="customerPhone">
+                        </div>
+                        <div class="col-12">
+                            <label for="customerAddress" class="form-label">Address</label>
+                            <textarea class="form-control" id="customerAddress" rows="2"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Products -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Add Products
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="productForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="productSelect" class="form-label">Product *</label>
+                            <select class="form-select" id="productSelect" required>
+                                <option value="">Select a product...</option>
+                                {% for product in products %}
+                                    {% if product.quantity > 0 %}
+                                        <option value="{{ product.full_product_name }}" 
+                                                data-price="{{ product.selling_price }}" 
+                                                data-weight="{{ product.weight or '' }}"
+                                                data-stock="{{ product.quantity }}">
+                                            {{ product.full_product_name }} - Stock: {{ product.quantity }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="quantity" class="form-label">Quantity *</label>
+                            <input type="number" class="form-control" id="quantity" min="1" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="unitPrice" class="form-label">Unit Price (₹)</label>
+                            <input type="number" class="form-control" id="unitPrice" step="0.01" min="0.01">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-success w-100" onclick="addProductToInvoice()">
+                                <i class="bi bi-plus"></i>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Invoice Items -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list-task me-2"></i>
+                    Invoice Items
+                </h5>
+                <button class="btn btn-outline-light btn-sm" onclick="clearAllItems()">
+                    <i class="bi bi-trash me-1"></i>
+                    Clear All
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Weight</th>
+                                <th>Quantity</th>
+                                <th>Unit Price (₹)</th>
+                                <th>Total (₹)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoiceItemsTable">
+                            <tr id="noItemsRow">
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                                    No items added yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Summary -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm sticky-top" style="top: 2rem;">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-calculator me-2"></i>
+                    Invoice Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">₹0.00</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-4">
+                    <strong>Total Amount:</strong>
+                    <strong class="text-primary fs-5" id="totalAmount">₹0.00</strong>
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-primary btn-lg" onclick="generateInvoice()" id="generateBtn">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>
+                        Generate Invoice & PDF
+                    </button>
+                </div>
+                
+                <!-- Success notification (hidden by default) -->
+                <div id="successNotification" class="mt-3 alert alert-success" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <div>
+                            <strong>Invoice Generated!</strong>
+                            <span id="invoiceDetails"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Generating Invoice...</h5>
+                <p class="text-muted mb-0">Please wait while we process your invoice.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let invoiceItems = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Product selection handler
+    document.getElementById('productSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const price = selectedOption.getAttribute('data-price');
+            document.getElementById('unitPrice').value = price;
+        } else {
+            document.getElementById('unitPrice').value = '';
+        }
+    });
+});
+
+// Add product to invoice
+function addProductToInvoice() {
+    const productSelect = document.getElementById('productSelect');
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const unitPrice = parseFloat(document.getElementById('unitPrice').value);
+    
+    if (!productSelect.value) {
+        showNotification('Please select a product', 'warning');
+        return;
+    }
+    
+    if (!quantity || quantity <= 0) {
+        showNotification('Please enter a valid quantity', 'danger');
+        return;
+    }
+    
+    if (!unitPrice || unitPrice <= 0) {
+        showNotification('Please enter a valid unit price', 'danger');
+        return;
+    }
+    
+    const selectedOption = productSelect.options[productSelect.selectedIndex];
+    const stock = parseInt(selectedOption.getAttribute('data-stock'));
+    const weight = selectedOption.getAttribute('data-weight') || '';
+    
+    if (quantity > stock) {
+        showNotification(`Insufficient stock! Available: ${stock}`, 'warning');
+        return;
+    }
+    
+    // Check if product already exists in invoice
+    const existingItem = invoiceItems.find(item => item.product_name === productSelect.value);
+    if (existingItem) {
+        showNotification('Product already added to invoice', 'info');
+        return;
+    }
+    
+    const item = {
+        product_name: productSelect.value,
+        weight: weight,
+        quantity: quantity,
+        unit_price: unitPrice,
+        total_price: quantity * unitPrice
+    };
+    
+    invoiceItems.push(item);
+    updateInvoiceItemsTable();
+    updateInvoiceSummary();
+    
+    // Clear form
+    document.getElementById('productForm').reset();
+    
+    showNotification('Product added successfully', 'success');
+}
+
+// Simple notification function
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add to body
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Remove item from invoice
+function removeItem(index) {
+    invoiceItems.splice(index, 1);
+    updateInvoiceItemsTable();
+    updateInvoiceSummary();
+    console.log('Item removed');
+}
+
+// Clear all items
+function clearAllItems() {
+    if (invoiceItems.length === 0) return;
+    
+    if (confirm('Are you sure you want to clear all items?')) {
+        invoiceItems = [];
+        updateInvoiceItemsTable();
+        updateInvoiceSummary();
+        console.log('All items cleared');
+    }
+}
+
+// Update invoice items table
+function updateInvoiceItemsTable() {
+    const tbody = document.getElementById('invoiceItemsTable');
+    
+    if (invoiceItems.length === 0) {
+        tbody.innerHTML = `
+            <tr id="noItemsRow">
+                <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                    No items added yet
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = invoiceItems.map((item, index) => `
+        <tr>
+            <td>${item.product_name}</td>
+            <td class="text-muted">${item.weight || 'N/A'}</td>
+            <td>${item.quantity}</td>
+            <td>₹${item.unit_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+            <td>₹${item.total_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeItem(${index})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Update invoice summary
+async function updateInvoiceSummary() {
+    if (invoiceItems.length === 0) {
+        document.getElementById('subtotal').textContent = '₹0.00';
+        document.getElementById('totalAmount').textContent = '₹0.00';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/invoice/calculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ items: invoiceItems })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const totals = data.totals;
+            document.getElementById('subtotal').textContent = `₹${totals.subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalAmount').textContent = `₹${totals.total_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        }
+    } catch (error) {
+        console.error('Error calculating totals:', error);
+    }
+}
+
+// Generate invoice
+async function generateInvoice() {
+    const customerName = document.getElementById('customerName').value.trim();
+    const customerPhone = document.getElementById('customerPhone').value.trim();
+    const customerAddress = document.getElementById('customerAddress').value.trim();
+    
+    if (!customerName) {
+        alert('Please enter customer name');
+        return;
+    }
+    
+    if (invoiceItems.length === 0) {
+        alert('Please add at least one item to the invoice');
+        return;
+    }
+    
+    // Show loading state
+    const generateBtn = document.getElementById('generateBtn');
+    const originalText = generateBtn.innerHTML;
+    generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+    generateBtn.disabled = true;
+    
+    try {
+        console.log('Sending invoice generation request...');
+        const response = await fetch('/api/invoice/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                customer_address: customerAddress,
+                items: invoiceItems
+            })
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            // Store invoice data for preview page
+            const invoiceData = data.invoice_data;
+            localStorage.setItem('currentInvoice', JSON.stringify(invoiceData));
+            
+            // Show success notification
+            document.getElementById('invoiceDetails').textContent = 
+                ` Invoice #${invoiceData.invoice_number} - ₹${invoiceData.total_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('successNotification').style.display = 'block';
+            
+            // Open invoice preview directly
+            const previewUrl = '/invoice/preview?data=' + encodeURIComponent(JSON.stringify(invoiceData));
+            window.open(previewUrl, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
+            
+            // Hide success notification after 5 seconds (but don't clear form)
+            setTimeout(() => {
+                document.getElementById('successNotification').style.display = 'none';
+            }, 5000);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error generating invoice:', error);
+        alert('Error generating invoice: ' + error.message);
+    } finally {
+        // Reset button
+        generateBtn.innerHTML = originalText;
+        generateBtn.disabled = false;
+    }
+}
+
+// Clear invoice form
+function clearInvoiceForm() {
+    document.getElementById('customerForm').reset();
+    document.getElementById('productForm').reset();
+    invoiceItems = [];
+    updateInvoiceItemsTable();
+    updateInvoiceSummary();
+    console.log('Form cleared');
+}
+</script>
+{% endblock %}

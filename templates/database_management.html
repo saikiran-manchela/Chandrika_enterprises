@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Database Management - Invoice Generation System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-6 fw-bold">
+                <i class="bi bi-database me-3"></i>
+                Database Management
+            </h1>
+            <div class="text-muted">
+                <small>Upload new CSV to update product database</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    Upload CSV File
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="csvUploadForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="csvFile" class="form-label">Select CSV File:</label>
+                                <input type="file" class="form-control" id="csvFile" name="csvFile" accept=".csv" required>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Upload a CSV file with columns: Product, Weight, Quantity, Cost Price, Selling Price
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="d-grid w-100">
+                                <button type="button" class="btn btn-outline-info mb-3" onclick="previewCSV()">
+                                    <i class="bi bi-eye me-2"></i>Preview
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-upload me-2"></i>Upload & Update Database
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Section -->
+<div class="row mb-4" id="previewSection" style="display: none;">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-table me-2"></i>
+                    CSV Preview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="previewContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Database Info -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-database-check me-2"></i>
+                    Current Database Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="h3 text-primary mb-1" id="totalProducts">-</div>
+                        <small class="text-muted">Total Products</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h3 text-info mb-1" id="lastUpdated">-</div>
+                        <small class="text-muted">Last Updated</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Important Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li>Uploading a new CSV will <strong>replace all existing products</strong></li>
+                    <li>A backup will be created automatically before update</li>
+                    <li>Ensure CSV format matches: Product, Weight, Quantity, Cost Price, Selling Price</li>
+                    <li>The application will restart automatically after update</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Updating Database...</h5>
+                <p class="text-muted mb-0">Please wait while we process your CSV file and update the database.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-responsive {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+.preview-badge {
+    font-size: 0.75rem;
+}
+</style>
+
+<script>
+// Load current database stats
+document.addEventListener('DOMContentLoaded', function() {
+    loadDatabaseStats();
+});
+
+async function loadDatabaseStats() {
+    try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('totalProducts').textContent = data.products.length;
+            // You can add more stats here
+            document.getElementById('lastUpdated').textContent = 'Today';
+        }
+    } catch (error) {
+        console.error('Error loading database stats:', error);
+    }
+}
+
+async function previewCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a CSV file first.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csvFile', file);
+    
+    try {
+        const response = await fetch('/api/database/preview', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showPreview(data);
+        } else {
+            alert('Preview failed: ' + data.error);
+        }
+    } catch (error) {
+        alert('Preview error: ' + error.message);
+    }
+}
+
+function showPreview(data) {
+    const previewSection = document.getElementById('previewSection');
+    const previewContent = document.getElementById('previewContent');
+    
+    let html = `
+        <div class="mb-3">
+            <span class="badge bg-primary preview-badge">Columns: ${data.columns.length}</span>
+            <span class="badge bg-info preview-badge">Preview Rows: ${data.preview.length}</span>
+            <span class="badge bg-success preview-badge">Total Rows: ${data.total_rows}</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+    `;
+    
+    // Add column headers
+    data.columns.forEach(col => {
+        html += `<th>${col}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    // Add preview rows
+    data.preview.forEach(row => {
+        html += '<tr>';
+        data.columns.forEach(col => {
+            html += `<td>${row[col] || ''}</td>`;
+        });
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table></div>';
+    
+    previewContent.innerHTML = html;
+    previewSection.style.display = 'block';
+    
+    // Scroll to preview
+    previewSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Handle form submission
+document.getElementById('csvUploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('csvFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a CSV file.');
+        return;
+    }
+    
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    const formData = new FormData();
+    formData.append('csvFile', file);
+    
+    try {
+        const response = await fetch('/api/database/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        loadingModal.hide();
+        
+        if (data.success) {
+            alert('Database updated successfully! The page will reload to show the latest data.');
+            window.location.reload();
+        } else {
+            alert('Upload failed: ' + data.error);
+        }
+    } catch (error) {
+        loadingModal.hide();
+        alert('Upload error: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

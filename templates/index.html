@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Invoice Generation System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="hero-section bg-gradient text-white rounded-4 p-5 mb-5">
+            <div class="container text-center">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="bi bi-receipt-cutoff me-3"></i>
+                    Invoice Generation System
+                </h1>
+                <p class="lead mb-4">
+                    Professional invoice management with automated tax calculations and inventory tracking
+                </p>
+                <div class="row g-3 justify-content-center">
+                    <div class="col-auto">
+                        <a href="{{ url_for('invoice_page') }}" class="btn btn-light btn-lg px-4">
+                            <i class="bi bi-file-earmark-plus me-2"></i>
+                            Generate Invoice
+                        </a>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ url_for('stock_page') }}" class="btn btn-outline-light btn-lg px-4">
+                            <i class="bi bi-box-seam me-2"></i>
+                            Manage Stock
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Quick Stats -->
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-primary mb-3">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <h5 class="card-title">Total Products</h5>
+                <p class="card-text display-6 fw-bold text-primary" id="totalProducts">-</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-success mb-3">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <h5 class="card-title">In Stock</h5>
+                <p class="card-text display-6 fw-bold text-success" id="inStockProducts">-</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-warning mb-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <h5 class="card-title">Low Stock</h5>
+                <p class="card-text display-6 fw-bold text-warning" id="lowStockProducts">-</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-danger mb-3">
+                    <i class="bi bi-x-circle"></i>
+                </div>
+                <h5 class="card-title">Out of Stock</h5>
+                <p class="card-text display-6 fw-bold text-danger" id="outOfStockProducts">-</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-4">
+    <!-- Recent Activity -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-activity me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <a href="{{ url_for('invoice_page') }}" class="btn btn-outline-primary btn-lg">
+                                <i class="bi bi-file-earmark-plus me-2"></i>
+                                Create New Invoice
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <a href="{{ url_for('stock_page') }}" class="btn btn-outline-success btn-lg">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Add New Product
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-info btn-lg" onclick="refreshStats()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Refresh Stats
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <a href="{{ url_for('reports_page') }}" class="btn btn-outline-warning btn-lg">
+                                <i class="bi bi-graph-up me-2"></i>
+                                View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Info -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    System Features
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Automatic Tax Calculation (18% GST)
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Real-time Stock Management
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Professional PDF Generation
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Customer Information Storage
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Product Database Management
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        Responsive Web Interface
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Load dashboard stats
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        
+        if (data.success) {
+            const products = data.products;
+            const totalProducts = products.length;
+            const inStockProducts = products.filter(p => p.quantity > 10).length;
+            const lowStockProducts = products.filter(p => p.quantity > 0 && p.quantity <= 10).length;
+            const outOfStockProducts = products.filter(p => p.quantity === 0).length;
+            
+            document.getElementById('totalProducts').textContent = totalProducts;
+            document.getElementById('inStockProducts').textContent = inStockProducts;
+            document.getElementById('lowStockProducts').textContent = lowStockProducts;
+            document.getElementById('outOfStockProducts').textContent = outOfStockProducts;
+        }
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+    }
+}
+
+function refreshStats() {
+    loadDashboardStats();
+    showToast('Stats refreshed successfully!', 'success');
+}
+
+// Load stats on page load
+document.addEventListener('DOMContentLoaded', loadDashboardStats);
+</script>
+{% endblock %}

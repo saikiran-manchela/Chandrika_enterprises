@@ -1,0 +1,827 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Management - Invoice Generation System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-6 fw-bold">
+                <i class="bi bi-box-seam me-3"></i>
+                Stock Management
+            </h1>
+            <button class="btn btn-outline-secondary" onclick="refreshStock()">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Add New Product -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Add New Product
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label for="newProductName" class="form-label">Product Name *</label>
+                        <input type="text" class="form-control" id="newProductName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newWeight" class="form-label">Weight/Size</label>
+                        <input type="text" class="form-control" id="newWeight" placeholder="e.g., 1 LT, 500 ML, 2 KG">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="newQuantity" class="form-label">Initial Quantity *</label>
+                            <input type="number" class="form-control" id="newQuantity" min="0" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="newCostPrice" class="form-label">Cost Price (₹)</label>
+                            <input type="number" class="form-control" id="newCostPrice" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="newSellingPrice" class="form-label">Selling Price (₹) *</label>
+                            <input type="number" class="form-control" id="newSellingPrice" step="0.01" min="0.01" required>
+                        </div>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="button" class="btn btn-success" onclick="addNewProduct()">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Add Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Stock -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-arrow-up-circle me-2"></i>
+                    Update Stock Quantity
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="updateStockForm">
+                    <div class="mb-3">
+                        <label for="updateProductSelect" class="form-label">Select Product *</label>
+                        <select class="form-select" id="updateProductSelect" required>
+                            <option value="">Choose a product...</option>
+                            {% for product in products %}
+                                <option value="{{ product.full_product_name }}" 
+                                        data-weight="{{ product.weight or '' }}"
+                                        data-current-stock="{{ product.quantity }}"
+                                        data-damaged-stock="{{ product.damaged_quantity or 0 }}">
+                                    {{ product.full_product_name }} - Available: {{ product.quantity }}{% if product.damaged_quantity %}, Damaged: {{ product.damaged_quantity }}{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="currentStock" class="form-label">Current Stock</label>
+                            <input type="text" class="form-control" id="currentStock" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="newStockQuantity" class="form-label">New Quantity *</label>
+                            <input type="number" class="form-control" id="newStockQuantity" min="0" required>
+                        </div>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="button" class="btn btn-primary" onclick="updateStock()">
+                            <i class="bi bi-arrow-up-circle me-2"></i>
+                            Update Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Damaged Products Management -->
+<div class="row mt-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Mark as Damaged
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="damagedForm">
+                    <div class="mb-3">
+                        <label for="damagedProductSelect" class="form-label">Select Product *</label>
+                        <select class="form-select" id="damagedProductSelect" required>
+                            <option value="">Choose a product...</option>
+                            {% for product in products %}
+                                {% if product.quantity > 0 %}
+                                <option value="{{ product.full_product_name }}" 
+                                        data-available="{{ product.quantity }}">
+                                    {{ product.full_product_name }} - Available: {{ product.quantity }}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="availableStock" class="form-label">Available Stock</label>
+                            <input type="text" class="form-control" id="availableStock" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="damagedQuantity" class="form-label">Damaged Quantity *</label>
+                            <input type="number" class="form-control" id="damagedQuantity" min="1" required>
+                        </div>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="button" class="btn btn-warning text-dark" onclick="markAsDamaged()">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Mark as Damaged
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    Restore Damaged Products
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="restoreForm">
+                    <div class="mb-3">
+                        <label for="restoreProductSelect" class="form-label">Select Product *</label>
+                        <select class="form-select" id="restoreProductSelect" required>
+                            <option value="">Choose a product...</option>
+                            {% for product in products %}
+                                {% if product.damaged_quantity and product.damaged_quantity > 0 %}
+                                <option value="{{ product.full_product_name }}" 
+                                        data-damaged="{{ product.damaged_quantity }}">
+                                    {{ product.full_product_name }} - Damaged: {{ product.damaged_quantity }}
+                                </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="damagedStock" class="form-label">Damaged Stock</label>
+                            <input type="text" class="form-control" id="damagedStock" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="restoreQuantity" class="form-label">Restore Quantity *</label>
+                            <input type="number" class="form-control" id="restoreQuantity" min="1" required>
+                        </div>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="button" class="btn btn-success" onclick="restoreDamaged()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>
+                            Restore Products
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Stock Table -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-table me-2"></i>
+                    Current Stock
+                </h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-light btn-sm" onclick="exportStock()">
+                        <i class="bi bi-download me-1"></i>
+                        Export
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-light btn-sm active" onclick="filterStock('all')" id="filterAll">All</button>
+                        <button class="btn btn-outline-light btn-sm" onclick="filterStock('instock')" id="filterInstock">In Stock</button>
+                        <button class="btn btn-outline-light btn-sm" onclick="filterStock('lowstock')" id="filterLowstock">Low Stock</button>
+                        <button class="btn btn-outline-light btn-sm" onclick="filterStock('outofstock')" id="filterOutofstock">Out of Stock</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Search and Filter -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search products...">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-end">
+                            <span class="badge bg-secondary fs-6" id="productCount">0 products</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Weight/Size</th>
+                                <th>Available</th>
+                                <th>Damaged</th>
+                                <th>Cost Price (₹)</th>
+                                <th>Selling Price (₹)</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTable">
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <div class="mt-2">Loading products...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let allProducts = [];
+let filteredProducts = [];
+let currentFilter = 'all';
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadProducts();
+    
+    // Update product select handler
+    document.getElementById('updateProductSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const currentStock = selectedOption.getAttribute('data-current-stock');
+            const damagedStock = selectedOption.getAttribute('data-damaged-stock') || 0;
+            const weight = selectedOption.getAttribute('data-weight');
+            const displayText = weight ? `${currentStock} available, ${damagedStock} damaged (${weight})` : `${currentStock} available, ${damagedStock} damaged`;
+            document.getElementById('currentStock').value = displayText;
+        } else {
+            document.getElementById('currentStock').value = '';
+        }
+    });
+    
+    // Damaged product select handler
+    document.getElementById('damagedProductSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const availableStock = selectedOption.getAttribute('data-available');
+            document.getElementById('availableStock').value = availableStock;
+            document.getElementById('damagedQuantity').max = availableStock;
+        } else {
+            document.getElementById('availableStock').value = '';
+        }
+    });
+    
+    // Restore product select handler
+    document.getElementById('restoreProductSelect').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const damagedStock = selectedOption.getAttribute('data-damaged');
+            document.getElementById('damagedStock').value = damagedStock;
+            document.getElementById('restoreQuantity').max = damagedStock;
+        } else {
+            document.getElementById('damagedStock').value = '';
+        }
+    });
+    
+    // Search handler
+    document.getElementById('searchInput').addEventListener('input', function() {
+        filterAndDisplayProducts();
+    });
+});
+
+// Load products from API
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        
+        if (data.success) {
+            allProducts = data.products;
+            updateProductSelect();
+            filterAndDisplayProducts();
+        } else {
+            showToast('Error loading products: ' + data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error loading products: ' + error.message, 'error');
+        document.getElementById('stockTable').innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
+                    Error loading products
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Update product select dropdown
+function updateProductSelect() {
+    const select = document.getElementById('updateProductSelect');
+    select.innerHTML = '<option value="">Choose a product...</option>';
+    
+    allProducts.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.product_name;
+        option.textContent = `${product.product_name} (Current: ${product.quantity})`;
+        option.setAttribute('data-current-stock', product.quantity);
+        select.appendChild(option);
+    });
+}
+
+// Filter and display products
+function filterAndDisplayProducts() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    // Apply filter
+    switch (currentFilter) {
+        case 'instock':
+            filteredProducts = allProducts.filter(p => p.quantity > 10);
+            break;
+        case 'lowstock':
+            filteredProducts = allProducts.filter(p => p.quantity > 0 && p.quantity <= 10);
+            break;
+        case 'outofstock':
+            filteredProducts = allProducts.filter(p => p.quantity === 0);
+            break;
+        default:
+            filteredProducts = allProducts;
+    }
+    
+    // Apply search
+    if (searchTerm) {
+        filteredProducts = filteredProducts.filter(p => 
+            p.full_product_name.toLowerCase().includes(searchTerm) ||
+            p.product_name.toLowerCase().includes(searchTerm) ||
+            (p.weight && p.weight.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    displayProducts();
+    updateProductCount();
+}
+
+// Display products in table
+function displayProducts() {
+    const tbody = document.getElementById('stockTable');
+    
+    if (filteredProducts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                    No products found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = filteredProducts.map(product => {
+        const status = getStockStatus(product.quantity);
+        const updatedAt = product.updated_at ? new Date(product.updated_at).toLocaleDateString() : 'N/A';
+        const damagedQty = product.damaged_quantity || 0;
+        
+        return `
+            <tr>
+                <td class="fw-semibold">${product.product_name}</td>
+                <td class="text-muted">${product.weight || 'N/A'}</td>
+                <td>
+                    <span class="badge ${status.class} fs-6">${product.quantity}</span>
+                </td>
+                <td>
+                    ${damagedQty > 0 ? `<span class="badge bg-warning text-dark fs-6">${damagedQty}</span>` : '<span class="text-muted">0</span>'}
+                </td>
+                <td>₹${product.cost_price ? product.cost_price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '0.00'}</td>
+                <td>₹${product.selling_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                <td>
+                    <span class="badge ${status.class}">${status.text}</span>
+                </td>
+                <td class="text-muted">${updatedAt}</td>
+                <td>
+                    <div class="btn-group-vertical btn-group-sm">
+                        <button class="btn btn-outline-primary btn-sm" onclick="quickUpdateStock('${product.full_product_name}', ${product.quantity})" title="Update Stock">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        ${product.quantity > 0 ? `<button class="btn btn-outline-warning btn-sm" onclick="quickMarkDamaged('${product.full_product_name}', ${product.quantity})" title="Mark as Damaged">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </button>` : ''}
+                        ${damagedQty > 0 ? `<button class="btn btn-outline-success btn-sm" onclick="quickRestoreDamaged('${product.full_product_name}', ${damagedQty})" title="Restore Damaged">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Get stock status
+function getStockStatus(quantity) {
+    if (quantity === 0) {
+        return { text: 'Out of Stock', class: 'bg-danger' };
+    } else if (quantity <= 10) {
+        return { text: 'Low Stock', class: 'bg-warning' };
+    } else {
+        return { text: 'In Stock', class: 'bg-success' };
+    }
+}
+
+// Update product count
+function updateProductCount() {
+    document.getElementById('productCount').textContent = `${filteredProducts.length} products`;
+}
+
+// Filter stock
+function filterStock(filter) {
+    currentFilter = filter;
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Set active button based on filter
+    let activeButtonId;
+    switch(filter) {
+        case 'all':
+            activeButtonId = 'filterAll';
+            break;
+        case 'instock':
+            activeButtonId = 'filterInstock';
+            break;
+        case 'lowstock':
+            activeButtonId = 'filterLowstock';
+            break;
+        case 'outofstock':
+            activeButtonId = 'filterOutofstock';
+            break;
+    }
+    
+    if (activeButtonId) {
+        document.getElementById(activeButtonId).classList.add('active');
+    }
+    
+    filterAndDisplayProducts();
+}
+
+// Add new product
+async function addNewProduct() {
+    const productName = document.getElementById('newProductName').value.trim();
+    const weight = document.getElementById('newWeight').value.trim();
+    const quantity = parseInt(document.getElementById('newQuantity').value);
+    const costPrice = parseFloat(document.getElementById('newCostPrice').value) || 0;
+    const sellingPrice = parseFloat(document.getElementById('newSellingPrice').value);
+    
+    if (!productName) {
+        showToast('Please enter product name', 'error');
+        return;
+    }
+    
+    if (isNaN(quantity) || quantity < 0) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+    }
+    
+    if (isNaN(sellingPrice) || sellingPrice <= 0) {
+        showToast('Please enter a valid selling price', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_name: productName,
+                weight: weight,
+                quantity: quantity,
+                cost_price: costPrice,
+                selling_price: sellingPrice
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Product added successfully!', 'success');
+            document.getElementById('addProductForm').reset();
+            loadProducts(); // Reload products
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error adding product: ' + error.message, 'error');
+    }
+}
+
+// Update stock
+async function updateStock() {
+    const productName = document.getElementById('updateProductSelect').value;
+    const newQuantity = parseInt(document.getElementById('newStockQuantity').value);
+    
+    if (!productName) {
+        showToast('Please select a product', 'error');
+        return;
+    }
+    
+    if (isNaN(newQuantity) || newQuantity < 0) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/products/stock', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                full_product_name: productName,
+                quantity: newQuantity
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Stock updated successfully!', 'success');
+            document.getElementById('updateStockForm').reset();
+            loadProducts(); // Reload products
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error updating stock: ' + error.message, 'error');
+    }
+}
+
+// Quick update stock (from table)
+function quickUpdateStock(productName, currentStock) {
+    const newQuantity = prompt(`Update stock for "${productName}":\nCurrent stock: ${currentStock}`, currentStock);
+    
+    if (newQuantity === null) return; // User cancelled
+    
+    const quantity = parseInt(newQuantity);
+    if (isNaN(quantity) || quantity < 0) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+    }
+    
+    // Use the updated stock API endpoint
+    fetch('/api/products/stock', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            full_product_name: productName, 
+            quantity: quantity 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Stock updated successfully!', 'success');
+            loadProducts();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error updating stock: ' + error.message, 'error');
+    });
+}
+
+// Refresh stock
+function refreshStock() {
+    loadProducts();
+    showToast('Stock data refreshed', 'info');
+}
+
+// Export stock
+function exportStock() {
+    try {
+        // Create a temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = '/api/products/export';
+        link.download = `stock_report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Stock data exported successfully!', 'success');
+    } catch (error) {
+        showToast('Error exporting stock data: ' + error.message, 'error');
+    }
+}
+
+// Mark as damaged
+async function markAsDamaged() {
+    const productName = document.getElementById('damagedProductSelect').value;
+    const damagedQty = parseInt(document.getElementById('damagedQuantity').value);
+    
+    if (!productName) {
+        showToast('Please select a product', 'error');
+        return;
+    }
+    
+    if (isNaN(damagedQty) || damagedQty <= 0) {
+        showToast('Please enter a valid damaged quantity', 'error');
+        return;
+    }
+    
+    if (!confirm(`Mark ${damagedQty} units of "${productName}" as damaged?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/products/damaged', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                full_product_name: productName,
+                damaged_quantity: damagedQty
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            document.getElementById('damagedForm').reset();
+            loadProducts(); // Reload products
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error marking products as damaged: ' + error.message, 'error');
+    }
+}
+
+// Restore damaged products
+async function restoreDamaged() {
+    const productName = document.getElementById('restoreProductSelect').value;
+    const restoreQty = parseInt(document.getElementById('restoreQuantity').value);
+    
+    if (!productName) {
+        showToast('Please select a product', 'error');
+        return;
+    }
+    
+    if (isNaN(restoreQty) || restoreQty <= 0) {
+        showToast('Please enter a valid restore quantity', 'error');
+        return;
+    }
+    
+    if (!confirm(`Restore ${restoreQty} units of "${productName}" from damaged stock?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/products/restore', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                full_product_name: productName,
+                restore_quantity: restoreQty
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            document.getElementById('restoreForm').reset();
+            loadProducts(); // Reload products
+        } else {
+            showToast(data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error restoring products: ' + error.message, 'error');
+    }
+}
+
+// Quick mark as damaged (from table)
+function quickMarkDamaged(productName, availableQty) {
+    const damagedQty = prompt(`Mark products as damaged for "${productName}":\nAvailable stock: ${availableQty}`, 1);
+    
+    if (damagedQty === null) return; // User cancelled
+    
+    const quantity = parseInt(damagedQty);
+    if (isNaN(quantity) || quantity <= 0 || quantity > availableQty) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+    }
+    
+    fetch('/api/products/damaged', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            full_product_name: productName, 
+            damaged_quantity: quantity 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            loadProducts();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error marking as damaged: ' + error.message, 'error');
+    });
+}
+
+// Quick restore damaged (from table)
+function quickRestoreDamaged(productName, damagedQty) {
+    const restoreQty = prompt(`Restore damaged products for "${productName}":\nDamaged stock: ${damagedQty}`, 1);
+    
+    if (restoreQty === null) return; // User cancelled
+    
+    const quantity = parseInt(restoreQty);
+    if (isNaN(quantity) || quantity <= 0 || quantity > damagedQty) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+    }
+    
+    fetch('/api/products/restore', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            full_product_name: productName, 
+            restore_quantity: quantity 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            loadProducts();
+        } else {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error restoring products: ' + error.message, 'error');
+    });
+}
+
+// Initialize filter buttons
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('filterAll').classList.add('active');
+});
+</script>
+{% endblock %}

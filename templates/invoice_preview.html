@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice Preview - Invoice Generation System{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .invoice-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+    
+    .navbar, .btn, footer {
+        display: none !important;
+    }
+}
+
+.invoice-container {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.invoice-header {
+    border-bottom: 2px solid #0d6efd;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.company-logo {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #0d6efd;
+}
+
+.invoice-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #0d6efd;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.invoice-details {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    margin: 20px 0;
+}
+
+.invoice-table {
+    margin: 20px 0;
+}
+
+.invoice-table th {
+    background: #0d6efd;
+    color: white;
+    padding: 12px;
+    font-weight: 600;
+}
+
+.invoice-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.totals-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    margin: 20px 0;
+}
+
+.total-amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0d6efd;
+    border-top: 2px solid #0d6efd;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.print-buttons {
+    text-align: center;
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-print mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h3">
+            <i class="bi bi-eye me-2"></i>
+            Invoice Preview
+        </h1>
+        <a href="{{ url_for('invoice_page') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to Generate Invoice
+        </a>
+    </div>
+</div>
+
+<div class="invoice-container" id="invoiceContainer">
+    <!-- Company Header -->
+    <div class="invoice-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="company-logo">
+                    <i class="bi bi-receipt-cutoff me-2"></i>
+                    TechStore Solutions
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        123 Business Street<br>
+                        Tech City, TC 12345<br>
+                        Phone: +91 98765 43210 | Email: sales@techstore.com<br>
+                        GSTIN: 22AAAAA0000A1Z5 | Website: www.techstore.com
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="invoice-title">INVOICE</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="p-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="invoice-details">
+                    <h6 class="fw-bold mb-3">Invoice Details:</h6>
+                    <div class="row">
+                        <div class="col-5"><strong>Invoice #:</strong></div>
+                        <div class="col-7" id="invoiceNumber">-</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-5"><strong>Date:</strong></div>
+                        <div class="col-7" id="invoiceDate">-</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-5"><strong>Time:</strong></div>
+                        <div class="col-7" id="invoiceTime">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="invoice-details">
+                    <h6 class="fw-bold mb-3">Bill To:</h6>
+                    <div class="customer-info">
+                        <div class="fw-bold" id="customerName">-</div>
+                        <div id="customerAddress">-</div>
+                        <div id="customerPhone">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="invoice-table">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="10%">S.No.</th>
+                        <th width="40%">Product Name</th>
+                        <th width="15%">Quantity</th>
+                        <th width="17.5%">Unit Price (₹)</th>
+                        <th width="17.5%">Total (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceItemsBody">
+                    <tr>
+                        <td colspan="5" class="text-center py-4">No items</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totals -->
+        <div class="row justify-content-end">
+            <div class="col-md-6">
+                <div class="totals-section">
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Subtotal:</strong></div>
+                        <div class="col-6 text-end" id="subtotalAmount">₹0.00</div>
+                    </div>
+                    <div class="row total-amount">
+                        <div class="col-6"><strong>Total Amount:</strong></div>
+                        <div class="col-6 text-end" id="totalAmount">₹0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-4 pt-4 border-top">
+            <h5 class="text-primary mb-3">Thank you for your business!</h5>
+            <small class="text-muted">
+                Terms & Conditions: Payment is due within 30 days. Late payments may incur additional charges.
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Print Buttons -->
+<div class="print-buttons no-print">
+    <div class="d-flex gap-3 justify-content-center">
+        <button class="btn btn-primary btn-lg" onclick="printInvoice()">
+            <i class="bi bi-printer me-2"></i>
+            Print Invoice
+        </button>
+        <button class="btn btn-outline-secondary btn-lg" onclick="window.close()">
+            <i class="bi bi-x-circle me-2"></i>
+            Close
+        </button>
+        <a href="{{ url_for('invoice_page') }}" class="btn btn-success btn-lg">
+            <i class="bi bi-plus-circle me-2"></i>
+            Generate New Invoice
+        </a>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div id="loadingState" class="text-center py-5" style="display: none;">
+    <div class="spinner-border text-primary mb-3" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <h5>Loading Invoice...</h5>
+    <p class="text-muted">Please wait while we prepare your invoice.</p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Print function
+function printInvoice() {
+    window.print();
+}
+
+// Load invoice data from URL parameters or localStorage
+function loadInvoiceData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const invoiceData = urlParams.get('data');
+    
+    if (invoiceData) {
+        try {
+            const data = JSON.parse(decodeURIComponent(invoiceData));
+            displayInvoice(data);
+        } catch (error) {
+            console.error('Error parsing invoice data:', error);
+            showError('Error loading invoice data');
+        }
+    } else {
+        // Try to load from localStorage as fallback
+        const savedData = localStorage.getItem('currentInvoice');
+        if (savedData) {
+            try {
+                const data = JSON.parse(savedData);
+                displayInvoice(data);
+            } catch (error) {
+                console.error('Error loading saved invoice data:', error);
+                showError('No invoice data found');
+            }
+        } else {
+            showError('No invoice data found');
+        }
+    }
+}
+
+// Display invoice data
+function displayInvoice(data) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('invoiceContainer').style.display = 'block';
+    
+    // Basic info
+    document.getElementById('invoiceNumber').textContent = data.invoice_number || '-';
+    document.getElementById('invoiceDate').textContent = data.date || '-';
+    document.getElementById('invoiceTime').textContent = data.time || '-';
+    
+    // Customer info
+    document.getElementById('customerName').textContent = data.customer_name || '-';
+    document.getElementById('customerAddress').textContent = data.customer_address || '-';
+    document.getElementById('customerPhone').textContent = data.customer_phone ? `Phone: ${data.customer_phone}` : '';
+    
+    // Items
+    const itemsBody = document.getElementById('invoiceItemsBody');
+    if (data.items && data.items.length > 0) {
+        itemsBody.innerHTML = data.items.map((item, index) => `
+            <tr>
+                <td class="text-center">${index + 1}</td>
+                <td>${item.product_name}</td>
+                <td class="text-center">${item.quantity}</td>
+                <td class="text-end">₹${item.unit_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                <td class="text-end">₹${item.total_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+            </tr>
+        `).join('');
+    } else {
+        itemsBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No items</td></tr>';
+    }
+    
+    // Totals
+    document.getElementById('subtotalAmount').textContent = `₹${(data.subtotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+    document.getElementById('totalAmount').textContent = `₹${(data.total_amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+}
+
+// Show error message
+function showError(message) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('invoiceContainer').innerHTML = `
+        <div class="text-center py-5">
+            <div class="display-1 text-muted mb-4">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="text-muted">${message}</h3>
+            <p class="text-muted">Please go back and generate a new invoice.</p>
+            <a href="{{ url_for('invoice_page') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Invoice Generation
+            </a>
+        </div>
+    `;
+}
+
+// Load invoice data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('invoiceContainer').style.display = 'none';
+    loadInvoiceData();
+});
+
+// Handle print shortcut
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        printInvoice();
+    }
+});
+</script>
+{% endblock %}
