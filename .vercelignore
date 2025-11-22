@@ -1,0 +1,26 @@
+# Virtual environment
+.venv/
+venv/
+__pycache__/
+
+# Database files (will be created in /tmp on Vercel)
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated files
+invoices/
+uploads/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Node modules (if any)
+node_modules/
+
+# Git
+.git/

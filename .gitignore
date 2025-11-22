@@ -59,3 +59,4 @@ Thumbs.db
 # CSV/Excel files with sensitive data
 db.csv
 *.xlsx
+.vercel
